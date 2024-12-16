@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Reminder App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Family Reminder System</h1>
+        <form id="reminder-form">
+            <label for="name">Family Member Name:</label>
+            <input type="text" id="name" required><br>
+
+            <label for="category">Category:</label>
+            <select id="category">
+                <option value="schedule">Schedule</option>
+                <option value="medications">Medications</option>
+                <option value="todo">To-Do List</option>
+            </select><br>
+
+            <label for="message">Reminder Message:</label>
+            <textarea id="message" required></textarea><br>
+
+            <label for="time">Time (HH:MM):</label>
+            <input type="time" id="time" required><br>
+
+            <button type="submit">Add Reminder</button>
+        </form>
+
+        <div id="notification"></div> <!-- Area for feedback -->
+
+        <div id="reminders-list">
+            <h2>All Reminders</h2>
+            <div id="schedule-list">
+                <h3>Schedule</h3>
+                <ul id="schedule-ul"></ul>
+            </div>
+            <div id="medications-list">
+                <h3>Medications</h3>
+                <ul id="medications-ul"></ul>
+            </div>
+            <div id="todo-list">
+                <h3>To-Do List</h3>
+                <ul id="todo-ul"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Handle form submission
+        document.getElementById('reminder-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('name').value;
+            const category = document.getElementById('category').value;
+            const message = document.getElementById('message').value;
+            const time = document.getElementById('time').value;
+
+            // Send the reminder to the server
+            fetch('/add_reminder', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: name,
+                    category: category,
+                    message: message,
+                    time: time
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('notification').textContent = data.message;
+                document.getElementById('notification').style.color = "green"; // Success message
+                document.getElementById('reminder-form').reset(); // Reset the form
+                updateReminders(); // Update reminders display
+            })
+            .catch(error => {
+                document.getElementById('notification').textContent = 'Error adding reminder!';
+                document.getElementById('notification').style.color = "red"; // Error message
+            });
+        });
+
+        // Function to update and display all reminders
+        function updateReminders() {
+            fetch('/reminders')  // Get reminders from the server
+                .then(response => response.json())
+                .then(data => {
+                    // Clear previous list
+                    document.getElementById('schedule-ul').innerHTML = '';
+                    document.getElementById('medications-ul').innerHTML = '';
+                    document.getElementById('todo-ul').innerHTML = '';
+
+                    // Add reminders to the lists
+                    for (const name in data) {
+                        const categories = data[name];
+                        for (const category in categories) {
+                            categories[category].forEach(reminder => {
+                                const li = document.createElement('li');
+                                li.textContent = `${name} added: "${reminder.message}" at ${reminder.time}`;
+
+                                if (category === 'schedule') {
+                                    document.getElementById('schedule-ul').appendChild(li);
+                                } else if (category === 'medications') {
+                                    document.getElementById('medications-ul').appendChild(li);
+                                } else if (category === 'todo') {
+                                    document.getElementById('todo-ul').appendChild(li);
+                                }
+                            });
+                        }
+                    }
+                });
+        }
+
+        // Initial load of reminders
+        updateReminders();
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
